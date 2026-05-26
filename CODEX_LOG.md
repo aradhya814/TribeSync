@@ -20,3 +20,9 @@ Built: 001_triggers.sql — state machine, invoice trigger, slug, market_rates v
 Why gpt-5.5: PL/pgSQL trigger syntax with CASE statements, exception handling,
 and sequence management required correctness on first pass.
 Time saved: ~3 hours
+
+## Session 4 — Day 1
+Model: codex-mini-latest | Mode: suggest
+Built: NextAuth v5, register route, middleware, auth-check helpers
+Suggest mode: all auth code is security-sensitive. Every diff reviewed.
+Time saved: ~2 hours

@@ -92,6 +92,8 @@ export const agentStatusEnum = pgEnum('agent_status', [
   'paused',
 ])
 
+export type AppRole = (typeof appRoleEnum.enumValues)[number]
+
 export const profiles = pgTable('profiles', {
   id: primaryId(),
   email: text('email').notNull().unique(),
