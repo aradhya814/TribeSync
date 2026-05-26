@@ -31,3 +31,8 @@ Time saved: ~2 hours
 Model: codex-mini-latest | Mode: auto-edit
 Built: dark design system, QueryClient provider, AppShell, role-aware sidebar, login/register pages, shared loading/empty/error states
 Time saved: ~2 hours
+
+## Session 6 — Day 2
+Model: codex-mini-latest | Mode: auto-edit
+Built: shared service libraries for Claude, Pusher, R2, Resend email, Razorpay, Gmail, profile enrichment, deal creation, and proof verification
+Time saved: ~2 hours
