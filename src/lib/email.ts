@@ -19,8 +19,6 @@ type SendEmailInput = {
   data?: Record<string, unknown>
 }
 
-const resend = new Resend(process.env.RESEND_API_KEY ?? '')
-
 const subjects: Record<EmailTemplate, string> = {
   deal_initiated: 'A new TribeSync deal has been initiated',
   escrow_funded: 'Escrow funded for your TribeSync deal',
@@ -46,6 +44,12 @@ function renderData(data: Record<string, unknown> = {}) {
 
 export async function sendEmail({ to, template, data }: SendEmailInput) {
   try {
+    if (!process.env.RESEND_API_KEY) {
+      return { success: false }
+    }
+
+    const resend = new Resend(process.env.RESEND_API_KEY)
+
     await resend.emails.send({
       from: process.env.FROM_EMAIL ?? 'noreply@tribesync.in',
       to,
