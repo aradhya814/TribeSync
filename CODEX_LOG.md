@@ -13,3 +13,10 @@ Why gpt-5.5: 27 interdependent tables, all foreign keys, cascade rules,
 unique indexes, agent tables — required reasoning across all relationships
 simultaneously. First-pass correctness critical for DB integrity.
 Time saved: ~4 hours
+
+## Session 3 — Day 1
+Model: gpt-5.5 (reasoning xhigh) | Mode: suggest
+Built: 001_triggers.sql — state machine, invoice trigger, slug, market_rates view
+Why gpt-5.5: PL/pgSQL trigger syntax with CASE statements, exception handling,
+and sequence management required correctness on first pass.
+Time saved: ~3 hours
