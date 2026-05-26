@@ -46,3 +46,13 @@ Time saved: ~3 hours
 Model: codex-mini-latest | Mode: auto-edit
 Built: campaign APIs, NLP parser with fallback, applications, AI ranking with fallback, campaign pages, escrow release helper
 Time saved: ~3 hours
+
+## Session 9 — Day 3 — THE CENTREPIECE
+Model: gpt-5.5 (reasoning xhigh) | Mode: suggest
+Built: DealOriginationAgent class, AgentActivityFeed, 4 agent API routes
+Why gpt-5.5: The async execution pattern — sequential steps that each
+broadcast real-time via Pusher, pause at human decision points, and handle
+errors without crashing — required deep architectural reasoning impossible
+for lighter models. This is step 7+8 of the build.
+Time saved: ~6 hours
+This session is the primary Codex evidence for judging criterion 2.

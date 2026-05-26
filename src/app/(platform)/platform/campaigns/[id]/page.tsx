@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
+import { AgentActivityFeed } from '@/components/agent/AgentActivityFeed'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -23,6 +24,8 @@ export default function CampaignDetailPage() {
   const params = useParams<{ id: string }>()
   const [campaign, setCampaign] = useState<Campaign | null>(null)
   const [isRanking, setIsRanking] = useState(false)
+  const [isLaunchingAgent, setIsLaunchingAgent] = useState(false)
+  const [runId, setRunId] = useState<string | null>(null)
 
   useEffect(() => {
     fetch(`/api/campaigns/${params.id}`)
@@ -44,6 +47,25 @@ export default function CampaignDetailPage() {
     toast.success('Ranking complete')
   }
 
+  async function launchAgent() {
+    if (!campaign) return
+    setIsLaunchingAgent(true)
+    const response = await fetch('/api/agent/deal/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ campaignId: campaign.id }),
+    })
+    const result = (await response.json()) as { runId?: string; error?: string }
+    setIsLaunchingAgent(false)
+
+    if (!response.ok || !result.runId) {
+      toast.error(result.error ?? 'Could not launch agent')
+      return
+    }
+
+    setRunId(result.runId)
+  }
+
   if (!campaign) {
     return <div className="glass-card p-6">Loading campaign...</div>
   }
@@ -60,6 +82,14 @@ export default function CampaignDetailPage() {
           {isRanking ? <Loader2 className="size-4 animate-spin" /> : <Bot className="size-4" />}
           Run AI Ranking
         </Button>
+      </div>
+
+      <div className="space-y-4">
+        <Button className="bg-tribe-primary hover:bg-tribe-primary-hover" onClick={launchAgent} disabled={isLaunchingAgent}>
+          {isLaunchingAgent ? <Loader2 className="size-4 animate-spin" /> : <Bot className="size-4" />}
+          Launch Agent
+        </Button>
+        {runId ? <AgentActivityFeed runId={runId} /> : null}
       </div>
 
       <Tabs defaultValue="overview" className="space-y-5">
