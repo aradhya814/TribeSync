@@ -41,3 +41,8 @@ Time saved: ~2 hours
 Model: codex-mini-latest | Mode: auto-edit
 Built: creator search, public creator profiles, inbound brief flow, profile update route, and seed script
 Time saved: ~3 hours
+
+## Session 8 — Day 2
+Model: codex-mini-latest | Mode: auto-edit
+Built: campaign APIs, NLP parser with fallback, applications, AI ranking with fallback, campaign pages, escrow release helper
+Time saved: ~3 hours
