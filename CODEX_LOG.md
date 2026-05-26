@@ -26,3 +26,8 @@ Model: codex-mini-latest | Mode: suggest
 Built: NextAuth v5, register route, middleware, auth-check helpers
 Suggest mode: all auth code is security-sensitive. Every diff reviewed.
 Time saved: ~2 hours
+
+## Session 5 — Day 1
+Model: codex-mini-latest | Mode: auto-edit
+Built: dark design system, QueryClient provider, AppShell, role-aware sidebar, login/register pages, shared loading/empty/error states
+Time saved: ~2 hours

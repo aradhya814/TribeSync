@@ -1,11 +1,11 @@
-import type { Config } from "tailwindcss";
+import type { Config } from 'tailwindcss'
 
 const config: Config = {
-    darkMode: ["class"],
-    content: [
-    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+  darkMode: ['class'],
+  content: [
+    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
     extend: {
@@ -43,6 +43,21 @@ const config: Config = {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
+        surface: 'hsl(var(--surface))',
+        'surface-elevated': 'hsl(var(--surface-elevated))',
+        hairline: 'hsl(var(--hairline))',
+        tribe: {
+          primary: 'hsl(var(--tribe-primary))',
+          'primary-hover': 'hsl(var(--tribe-primary-hover))',
+          success: 'hsl(var(--tribe-success))',
+          warning: 'hsl(var(--tribe-warning))',
+          info: 'hsl(var(--tribe-info))',
+        },
+        text: {
+          high: 'hsl(var(--text-high))',
+          mid: 'hsl(var(--text-mid))',
+          low: 'hsl(var(--text-low))',
+        },
         chart: {
           '1': 'hsl(var(--chart-1))',
           '2': 'hsl(var(--chart-2))',
@@ -68,6 +83,6 @@ const config: Config = {
       }
     }
   },
-  plugins: [require("tailwindcss-animate")],
-};
-export default config;
+  plugins: [require('tailwindcss-animate')],
+}
+export default config
