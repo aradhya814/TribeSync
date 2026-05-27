@@ -71,3 +71,11 @@ Model: codex-mini-latest | Mode: auto-edit
 Built: CRM Kanban, outreach signals, outreach history, AI outreach drafting,
 follow-up agent cron, signal outreach cron, and worker schedule.
 Time saved: ~3 hours
+
+## Session 12 — Dashboards
+Model: gpt-4.1 | Mode: auto-edit
+Built: All 3 dashboards — creator growth, brand analytics, admin platform
+Why gpt-4.1: Building 3 dashboards required reading full schema, all existing
+API patterns, and dashboard specs simultaneously. Larger context window prevented
+dropped-context errors in existing code patterns.
+Time saved: ~3 hours
