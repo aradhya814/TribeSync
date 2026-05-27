@@ -56,3 +56,12 @@ errors without crashing — required deep architectural reasoning impossible
 for lighter models. This is step 7+8 of the build.
 Time saved: ~6 hours
 This session is the primary Codex evidence for judging criterion 2.
+
+## Session 10 — Day 3
+Model: codex-mini-latest | Mode: suggest for payment routes
+Built: Razorpay order + webhook flow, escrow funding, milestone proof
+submission/approval/rejection, invoice agent, dispute routes, milestone monitor
+cron, and deal detail UI.
+Payment route mode: suggest because Razorpay signature verification,
+idempotency, and amount reconciliation are financial-code risk points.
+Time saved: ~4 hours
