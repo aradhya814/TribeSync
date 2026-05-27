@@ -13,6 +13,7 @@ export default async function PlatformLayout({ children }: { children: React.Rea
   return (
     <AppShell
       user={{
+        id: session.user.id,
         name: session.user.name ?? session.user.email ?? 'TribeSync User',
         email: session.user.email ?? '',
         avatarUrl: session.user.image,

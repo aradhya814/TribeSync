@@ -2,12 +2,14 @@
 
 import type { ReactNode } from 'react'
 
+import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications'
 import type { AppRole } from '@/lib/db/schema'
 
 import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
 
 export type AppShellUser = {
+  id: string
   name: string
   email: string
   avatarUrl?: string | null
@@ -15,6 +17,8 @@ export type AppShellUser = {
 }
 
 export function AppShell({ children, user }: { children: ReactNode; user: AppShellUser }) {
+  useRealtimeNotifications(user.id)
+
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar role={user.role} />
