@@ -37,6 +37,7 @@ cron.schedule('0 * * * *', () => void callCronRoute('/api/cron/followup-agent'),
 cron.schedule('0 8 * * *', () => void callCronRoute('/api/cron/signal-outreach'), { timezone })
 cron.schedule('0 9 * * *', () => void callCronRoute('/api/cron/milestone-monitor'), { timezone })
 cron.schedule('0 3 * * *', () => void callCronRoute('/api/cron/refresh-market-rates'), { timezone })
+cron.schedule('30 3 * * *', () => void callCronRoute('/api/cron/invoice-monitor'), { timezone })
 cron.schedule('0 6 * * 1', () => void callCronRoute('/api/cron/generate-playbooks'), { timezone })
 cron.schedule('0 0 * * 0', () => void callCronRoute('/api/cron/calculate-rankings'), { timezone })
 cron.schedule('0 2 1 * *', () => void callCronRoute('/api/cron/generate-chronicles'), { timezone })
