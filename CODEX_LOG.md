@@ -65,3 +65,9 @@ cron, and deal detail UI.
 Payment route mode: suggest because Razorpay signature verification,
 idempotency, and amount reconciliation are financial-code risk points.
 Time saved: ~4 hours
+
+## Session 11 — Day 4
+Model: codex-mini-latest | Mode: auto-edit
+Built: CRM Kanban, outreach signals, outreach history, AI outreach drafting,
+follow-up agent cron, signal outreach cron, and worker schedule.
+Time saved: ~3 hours
