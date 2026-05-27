@@ -9,12 +9,21 @@ type CallClaudeOptions = {
 }
 
 const modelByAlias: Record<ClaudeModel, string> = {
-  haiku: 'claude-haiku-4-5-20251001',
-  sonnet: 'claude-sonnet-4-6',
+  haiku: 'claude-3-5-haiku-20241022',
+  sonnet: 'claude-sonnet-4-20250514',
+}
+
+function requireAnthropicApiKey() {
+  const apiKey = process.env.ANTHROPIC_API_KEY
+  if (!apiKey) {
+    throw new Error('ANTHROPIC_API_KEY is required')
+  }
+
+  return apiKey
 }
 
 export const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY ?? '',
+  apiKey: requireAnthropicApiKey(),
 })
 
 export async function callClaude(prompt: string, options: CallClaudeOptions = {}) {
