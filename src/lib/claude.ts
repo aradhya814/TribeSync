@@ -13,17 +13,8 @@ const modelByAlias: Record<ClaudeModel, string> = {
   sonnet: 'claude-sonnet-4-20250514',
 }
 
-function requireAnthropicApiKey() {
-  const apiKey = process.env.ANTHROPIC_API_KEY
-  if (!apiKey) {
-    throw new Error('ANTHROPIC_API_KEY is required')
-  }
-
-  return apiKey
-}
-
 export const anthropic = new Anthropic({
-  apiKey: requireAnthropicApiKey(),
+  apiKey: process.env.ANTHROPIC_API_KEY ?? '',
 })
 
 export async function callClaude(prompt: string, options: CallClaudeOptions = {}) {
