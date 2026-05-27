@@ -24,6 +24,7 @@ export default function RegisterPage() {
   const router = useRouter()
   const [role, setRole] = useState<RegisterRole>('msme')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [creatorCreated, setCreatorCreated] = useState(false)
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -50,6 +51,11 @@ export default function RegisterPage() {
     }
 
     toast.success('Account created')
+    if (role === 'creator') {
+      setCreatorCreated(true)
+      return
+    }
+
     router.push('/login')
   }
 
@@ -63,6 +69,20 @@ export default function RegisterPage() {
           <CardTitle className="heading-2">Create your TribeSync account</CardTitle>
         </CardHeader>
         <CardContent>
+          {creatorCreated ? (
+            <div className="space-y-4 rounded-lg border border-emerald-400/20 bg-emerald-400/10 p-5">
+              <div>
+                <p className="text-lg font-semibold text-white">Creator account created</p>
+                <p className="body-text mt-1">
+                  Sign in and connect YouTube or Instagram in one OAuth flow to unlock verified average views and the higher Phyllo trust multiplier.
+                </p>
+              </div>
+              <Button asChild className="bg-tribe-primary hover:bg-tribe-primary-hover">
+                <Link href="/login">Sign in to connect</Link>
+              </Button>
+            </div>
+          ) : (
+            <>
           <div className="mb-6 grid gap-3 sm:grid-cols-2">
             <button
               type="button"
@@ -116,6 +136,8 @@ export default function RegisterPage() {
               Sign in
             </Link>
           </p>
+            </>
+          )}
         </CardContent>
       </Card>
     </main>

@@ -10,17 +10,41 @@ type EnrichmentResult = {
   contentStyle: string
 }
 
+type SponsorshipProfile = {
+  views72h?: number | null
+  postingFrequency?: string | null
+  engagementRate?: string | number | null
+  contentPurity?: string | null
+  isVerified?: boolean | null
+}
+
+export function calculateSponsorshipReadiness(profile: SponsorshipProfile) {
+  let score = 0
+
+  if ((profile.views72h ?? 0) >= 80000) score += 0.4
+
+  const postingFrequency = profile.postingFrequency?.toLowerCase()
+  if (postingFrequency === 'weekly') score += 0.2
+  if (postingFrequency === 'biweekly') score += 0.1
+
+  if (Number(profile.engagementRate ?? 0) >= 3) score += 0.2
+  if (profile.contentPurity === 'pure') score += 0.1
+  if (profile.isVerified) score += 0.1
+
+  return Math.min(1, Math.round(score * 100) / 100)
+}
+
 function shouldEnrich(
   newNiche: string | null | undefined,
-  newBio: string | null | undefined,
+  newSummary: string | null | undefined,
   oldNiche: string | null | undefined,
-  oldBio: string | null | undefined,
+  oldSummary: string | null | undefined,
   enrichedAt: Date | string | null | undefined,
 ) {
   const nicheChanged = newNiche !== oldNiche
-  const bioChanged = newBio !== oldBio
+  const summaryChanged = newSummary !== oldSummary
 
-  if (!nicheChanged && !bioChanged) {
+  if (!nicheChanged && !summaryChanged) {
     return false
   }
 
@@ -53,12 +77,12 @@ function parseEnrichment(raw: string): EnrichmentResult {
 export async function maybeEnrichProfile(
   profileId: string,
   newNiche: string | null | undefined,
-  newBio: string | null | undefined,
+  newSummary: string | null | undefined,
   oldNiche: string | null | undefined,
-  oldBio: string | null | undefined,
+  oldSummary: string | null | undefined,
   enrichedAt: Date | string | null | undefined,
 ) {
-  if (!shouldEnrich(newNiche, newBio, oldNiche, oldBio, enrichedAt)) {
+  if (!shouldEnrich(newNiche, newSummary, oldNiche, oldSummary, enrichedAt)) {
     return
   }
 
@@ -69,7 +93,7 @@ export async function maybeEnrichProfile(
       id: profiles.id,
       fullName: profiles.fullName,
       niche: profiles.niche,
-      bio: profiles.bio,
+      enrichedSummary: profiles.enrichedSummary,
       avgViews: profiles.avgViews,
       platforms: profiles.platforms,
     })
@@ -90,7 +114,7 @@ export async function maybeEnrichProfile(
     `Return JSON with summary, tags, contentStyle for this creator profile.
 Name: ${profile.fullName ?? 'Unknown'}
 Niche: ${profile.niche ?? 'Unknown'}
-Bio: ${profile.bio ?? ''}
+Summary: ${profile.enrichedSummary ?? ''}
 Average views: ${profile.avgViews ?? 0}
 Platforms: ${(profile.platforms ?? []).join(', ')}`,
     { model: 'haiku', maxTokens: 500 },

@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 
 import { requireAuth } from '@/lib/api/auth-check'
-import { maybeEnrichProfile } from '@/lib/api/profiles'
+import { calculateSponsorshipReadiness, maybeEnrichProfile } from '@/lib/api/profiles'
 import { db } from '@/lib/db'
 import { creatorBankDetails, notificationPrefs, profiles } from '@/lib/db/schema'
 
@@ -13,9 +13,15 @@ const settingsSchema = z.discriminatedUnion('section', [
     section: z.literal('profile'),
     fullName: z.string().optional(),
     avatarUrl: z.string().optional(),
-    bio: z.string().optional(),
+    enrichedSummary: z.string().optional(),
     location: z.string().optional(),
     niche: z.string().optional(),
+    views72h: z.number().int().nonnegative().optional(),
+    contentLanguage: z.string().optional(),
+    contentPurity: z.enum(['pure', 'regional', 'mixed']).optional(),
+    secondaryNiche: z.string().optional(),
+    contentMixRatio: z.string().optional(),
+    acceptsSponsorships: z.boolean().optional(),
     platforms: z.array(z.string()).optional(),
     company: z.string().optional(),
     industry: z.string().optional(),
@@ -100,28 +106,43 @@ export async function PATCH(request: Request) {
   if (!oldProfile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
 
   if (parsed.data.section === 'profile') {
-    const profileValues = {
-      fullName: parsed.data.fullName,
-      avatarUrl: parsed.data.avatarUrl,
-      bio: parsed.data.bio,
-      location: parsed.data.location,
-      niche: parsed.data.niche,
-      platforms: parsed.data.platforms,
-      company: parsed.data.company,
-      industry: parsed.data.industry,
-      website: parsed.data.website,
-    }
-    const [profile] = await db
+    const sponsorshipReadiness = calculateSponsorshipReadiness({
+      views72h: parsed.data.views72h ?? oldProfile.views72h,
+      postingFrequency: oldProfile.postingFrequency,
+      engagementRate: oldProfile.engagementRate,
+      contentPurity: parsed.data.contentPurity ?? oldProfile.contentPurity,
+      isVerified: oldProfile.isVerified,
+    })
+
+    const [updatedProfile] = await db
       .update(profiles)
-      .set({ ...profileValues, updatedAt: new Date() })
+      .set({
+        fullName: parsed.data.fullName,
+        avatarUrl: parsed.data.avatarUrl,
+        enrichedSummary: parsed.data.enrichedSummary,
+        location: parsed.data.location,
+        niche: parsed.data.niche,
+        views72h: parsed.data.views72h,
+        contentLanguage: parsed.data.contentLanguage,
+        contentPurity: parsed.data.contentPurity,
+        secondaryNiche: parsed.data.secondaryNiche,
+        contentMixRatio: parsed.data.contentMixRatio,
+        acceptsSponsorships: parsed.data.acceptsSponsorships,
+        platforms: parsed.data.platforms,
+        company: parsed.data.company,
+        industry: parsed.data.industry,
+        website: parsed.data.website,
+        sponsorshipReadiness: sponsorshipReadiness.toFixed(2),
+        updatedAt: new Date(),
+      })
       .where(eq(profiles.id, userId))
       .returning()
 
-    void maybeEnrichProfile(userId, profile.niche, profile.bio, oldProfile.niche, oldProfile.bio, oldProfile.enrichedAt).catch(
+    void maybeEnrichProfile(userId, updatedProfile.niche, updatedProfile.enrichedSummary, oldProfile.niche, oldProfile.enrichedSummary, oldProfile.enrichedAt).catch(
       (error) => console.error('Profile enrichment failed', error),
     )
 
-    return NextResponse.json({ profile })
+    return NextResponse.json({ profile: updatedProfile })
   }
 
   if (parsed.data.section === 'link') {

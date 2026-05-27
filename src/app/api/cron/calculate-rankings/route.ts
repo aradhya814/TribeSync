@@ -2,10 +2,11 @@ import { eq } from 'drizzle-orm'
 import { NextResponse } from 'next/server'
 
 import { requireCron } from '@/lib/api/auth-check'
+import { calculateSponsorshipReadiness } from '@/lib/api/profiles'
 import { db } from '@/lib/db'
 import { collabDeals, competitorProfiles, outreachSignals, profiles, rankings, userRoles } from '@/lib/db/schema'
 
-function trustMultiplier(totalDeals: number) {
+function fallbackTrustMultiplier(totalDeals: number) {
   if (totalDeals > 0) return 0.9
   return 0.7
 }
@@ -23,6 +24,7 @@ export async function POST(request: Request) {
 
   const creators = activeProfiles.filter((profile) => roles.find((role) => role.userId === profile.id)?.role === 'creator')
   const maxAvgViews = Math.max(1, ...creators.map((creator) => creator.avgViews ?? 0))
+  const maxViewRatio = Math.max(1, ...creators.map((creator) => Number(creator.viewSubscriberRatio ?? 0)))
   const oldRankByUser = new Map(oldWeekly.map((rank) => [rank.userId, rank.rankPosition]))
 
   const scored = creators
@@ -33,13 +35,20 @@ export async function POST(request: Request) {
       )
       const recentDeal = creatorDeals.some((deal) => Date.now() - new Date(deal.createdAt).getTime() < 60 * 24 * 60 * 60 * 1000)
       const avgViewsScore = ((creator.avgViews ?? 0) / maxAvgViews) * 100
-      const viewRatioScore = Math.min(100, Number(creator.viewSubscriberRatio ?? 0) * 100)
+      const viewRatioScore = (Number(creator.viewSubscriberRatio ?? 0) / maxViewRatio) * 100
       const completionScore = creatorDeals.length > 0 ? (completedDeals.length / creatorDeals.length) * 100 : 0
       const recencyScore = recentDeal ? 100 : 20
-      const rawScore = avgViewsScore * 0.4 + viewRatioScore * 0.25 + completionScore * 0.2 + recencyScore * 0.15
-      const score = Math.round(rawScore * trustMultiplier(creatorDeals.length) * 10)
+      const sponsorshipReadiness = calculateSponsorshipReadiness(creator)
+      const rawScore =
+        avgViewsScore * 0.35 +
+        viewRatioScore * 0.25 +
+        completionScore * 0.2 +
+        recencyScore * 0.1 +
+        sponsorshipReadiness * 100 * 0.1
+      const multiplier = Number(creator.trustMultiplier ?? fallbackTrustMultiplier(creatorDeals.length))
+      const score = Math.round(rawScore * multiplier * 10)
 
-      return { creator, score, completionScore }
+      return { creator, score, completionScore, sponsorshipReadiness }
     })
     .sort((a, b) => b.score - a.score)
 
@@ -69,6 +78,7 @@ export async function POST(request: Request) {
       .update(profiles)
       .set({
         deliveryReliabilityScore: String(Math.round(item.completionScore * 100) / 100),
+        sponsorshipReadiness: item.sponsorshipReadiness.toFixed(2),
       })
       .where(eq(profiles.id, item.creator.id))
 

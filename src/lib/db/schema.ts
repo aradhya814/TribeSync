@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm'
 import {
   boolean,
+  check,
   date,
   decimal,
   index,
@@ -110,6 +111,26 @@ export const profiles = pgTable('profiles', {
   platforms: text('platforms').array().default(emptyTextArray),
   subscribers: integer('subscribers').default(0),
   avgViews: integer('avg_views').default(0),
+  views72h: integer('views_72h').default(0),
+  contentLanguage: text('content_language').default('en'),
+  contentPurity: text('content_purity').default('pure'),
+  secondaryNiche: text('secondary_niche'),
+  contentMixRatio: text('content_mix_ratio'),
+  sponsorshipReadiness: decimal('sponsorship_readiness', { precision: 3, scale: 2 }).default('0.00'),
+  acceptsSponsorships: boolean('accepts_sponsorships').default(true),
+  verifiedAvgViews: integer('verified_avg_views').default(0),
+  dataSource: text('data_source').default('self_reported'),
+  trustMultiplier: decimal('trust_multiplier', { precision: 3, scale: 2 }).default('0.70'),
+  youtubeChannelId: text('youtube_channel_id'),
+  youtubeChannelUrl: text('youtube_channel_url'),
+  vidiqOutlierScore: decimal('vidiq_outlier_score', { precision: 8, scale: 2 }).default('0'),
+  vidiqViewVelocity: integer('vidiq_view_velocity').default(0),
+  phylloUserId: text('phyllo_user_id'),
+  phylloAccountId: text('phyllo_account_id'),
+  phylloStatus: text('phyllo_status'),
+  influencerTier: text('influencer_tier').generatedAlwaysAs(
+    sql`CASE WHEN avg_views < 10000 THEN 'nano' WHEN avg_views < 50000 THEN 'micro' WHEN avg_views < 200000 THEN 'mid' WHEN avg_views < 1000000 THEN 'macro' ELSE 'mega' END`,
+  ),
   viewSubscriberRatio: decimal('view_subscriber_ratio', { precision: 5, scale: 4 }).generatedAlwaysAs(
     sql`CASE WHEN subscribers > 0 THEN LEAST(avg_views::DECIMAL / subscribers, 9.9999) ELSE 0 END`,
   ),
@@ -126,7 +147,11 @@ export const profiles = pgTable('profiles', {
   isVerified: boolean('is_verified').default(false),
   createdAt: createdAtColumn(),
   updatedAt: updatedAtColumn(),
-})
+}, (table) => [
+  check('profiles_content_purity_check', sql`${table.contentPurity} IN ('pure','regional','mixed')`),
+  uniqueIndex('profiles_youtube_channel_id_unique').on(table.youtubeChannelId).where(sql`${table.youtubeChannelId} IS NOT NULL`),
+  index('profiles_data_source_idx').on(table.dataSource),
+])
 
 export const userRoles = pgTable('user_roles', {
   id: primaryId(),

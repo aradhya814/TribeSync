@@ -22,12 +22,51 @@ type ParsedCampaign = {
   suggested_content_style: string
 }
 
+function budgetTierSuggestion(value: string) {
+  const budget = Number(value)
+  if (!Number.isFinite(budget) || budget <= 0) return null
+
+  if (budget <= 1000000) {
+    return {
+      label: 'Nano + Micro',
+      range: '1K-50K avg views',
+      minAvgViews: '1000',
+    }
+  }
+
+  if (budget <= 3000000) {
+    return {
+      label: 'Micro + Mid',
+      range: '10K-200K avg views',
+      minAvgViews: '10000',
+    }
+  }
+
+  if (budget <= 7500000) {
+    return {
+      label: 'Mid + Macro',
+      range: '50K-1M avg views',
+      minAvgViews: '50000',
+    }
+  }
+
+  return {
+    label: 'Macro + Mega',
+    range: '200K+ avg views',
+    minAvgViews: '200000',
+  }
+}
+
 export default function NewCampaignPage() {
   const router = useRouter()
   const [parsed, setParsed] = useState<ParsedCampaign | null>(null)
   const [rawBrief, setRawBrief] = useState('')
   const [isParsing, setIsParsing] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [budgetValue, setBudgetValue] = useState('')
+  const [minAvgViewsValue, setMinAvgViewsValue] = useState('8000')
+
+  const tierSuggestion = budgetTierSuggestion(budgetValue)
 
   async function parseBrief() {
     setIsParsing(true)
@@ -38,6 +77,8 @@ export default function NewCampaignPage() {
     })
     const result = (await response.json()) as ParsedCampaign
     setParsed(result)
+    setBudgetValue(result.budget ? String(result.budget) : '')
+    setMinAvgViewsValue(result.suggested_min_avg_views ? String(result.suggested_min_avg_views) : '8000')
     setIsParsing(false)
   }
 
@@ -118,11 +159,38 @@ export default function NewCampaignPage() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="budget">Budget</Label>
-            <Input id="budget" name="budget" inputMode="decimal" defaultValue={parsed?.budget ?? ''} />
+            <Input
+              id="budget"
+              name="budget"
+              inputMode="decimal"
+              value={budgetValue}
+              onChange={(event) => setBudgetValue(event.target.value)}
+            />
+            {tierSuggestion ? (
+              <div className="rounded-lg border border-tribe-primary/30 bg-tribe-primary/10 p-3 text-sm text-text-mid">
+                <p>
+                  For Rs {Number(budgetValue).toLocaleString('en-IN')} budget, we suggest {tierSuggestion.label} tier creators ({tierSuggestion.range}).
+                </p>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="mt-3 bg-tribe-primary hover:bg-tribe-primary-hover"
+                  onClick={() => setMinAvgViewsValue(tierSuggestion.minAvgViews)}
+                >
+                  Apply Suggestion
+                </Button>
+              </div>
+            ) : null}
           </div>
           <div className="space-y-2">
             <Label htmlFor="minAvgViews">Suggested min avg views</Label>
-            <Input id="minAvgViews" name="minAvgViews" inputMode="numeric" defaultValue={parsed?.suggested_min_avg_views ?? 8000} />
+            <Input
+              id="minAvgViews"
+              name="minAvgViews"
+              inputMode="numeric"
+              value={minAvgViewsValue}
+              onChange={(event) => setMinAvgViewsValue(event.target.value)}
+            />
           </div>
         </div>
         <div className="space-y-2">

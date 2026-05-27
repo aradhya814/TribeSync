@@ -3,6 +3,7 @@ import 'dotenv/config'
 import bcrypt from 'bcryptjs'
 import { eq } from 'drizzle-orm'
 
+import { calculateSponsorshipReadiness } from '@/lib/api/profiles'
 import { db } from '@/lib/db'
 import {
   campaigns,
@@ -21,7 +22,15 @@ type SeedProfile = {
   platforms?: string[]
   subscribers?: number
   avgViews?: number
+  views72h?: number
+  contentLanguage?: string
+  contentPurity?: 'pure' | 'regional' | 'mixed'
+  secondaryNiche?: string
+  contentMixRatio?: string
+  sponsorshipReadiness?: string
+  acceptsSponsorships?: boolean
   engagementRate?: string
+  postingFrequency?: string
   enrichedSummary?: string
   enrichedTags?: string[]
   enrichedContentStyle?: string
@@ -34,7 +43,14 @@ type SeedProfile = {
 
 const passwordHashPromise = bcrypt.hash('password123', 12)
 
-const creators: SeedProfile[] = [
+function withSponsorshipReadiness(profile: SeedProfile): SeedProfile {
+  return {
+    ...profile,
+    sponsorshipReadiness: calculateSponsorshipReadiness(profile).toFixed(2),
+  }
+}
+
+const creatorSeeds: SeedProfile[] = [
   {
     email: 'arjun.tech@example.com',
     fullName: 'Arjun Mehta',
@@ -43,7 +59,12 @@ const creators: SeedProfile[] = [
     platforms: ['youtube', 'instagram'],
     subscribers: 86000,
     avgViews: 52000,
+    views72h: 95000,
+    contentLanguage: 'en',
+    contentPurity: 'pure',
+    acceptsSponsorships: true,
     engagementRate: '6.40',
+    postingFrequency: 'weekly',
     enrichedSummary: 'Tech tutorial creator with strong laptop, gaming, and productivity audiences.',
     enrichedTags: ['gaming laptops', 'tutorials', 'reviews'],
     enrichedContentStyle: 'tutorial',
@@ -58,7 +79,14 @@ const creators: SeedProfile[] = [
     platforms: ['instagram'],
     subscribers: 42000,
     avgViews: 27000,
+    views72h: 48000,
+    contentLanguage: 'hi',
+    contentPurity: 'mixed',
+    secondaryNiche: 'lifestyle',
+    contentMixRatio: '70/30',
+    acceptsSponsorships: true,
     engagementRate: '7.10',
+    postingFrequency: 'weekly',
     enrichedSummary: 'Fashion creator focused on affordable styling and festive looks.',
     enrichedTags: ['styling', 'festive', 'reels'],
     enrichedContentStyle: 'storytelling',
@@ -73,7 +101,12 @@ const creators: SeedProfile[] = [
     platforms: ['youtube', 'instagram'],
     subscribers: 135000,
     avgViews: 118000,
+    views72h: 120000,
+    contentLanguage: 'ta',
+    contentPurity: 'regional',
+    acceptsSponsorships: true,
     engagementRate: '5.80',
+    postingFrequency: 'weekly',
     enrichedSummary: 'Food creator covering quick recipes, restaurant finds, and kitchen products.',
     enrichedTags: ['recipes', 'restaurants', 'kitchen'],
     enrichedContentStyle: 'review',
@@ -88,7 +121,12 @@ const creators: SeedProfile[] = [
     platforms: ['youtube', 'linkedin'],
     subscribers: 74000,
     avgViews: 39000,
+    views72h: 62000,
+    contentLanguage: 'en',
+    contentPurity: 'pure',
+    acceptsSponsorships: true,
     engagementRate: '4.90',
+    postingFrequency: 'weekly',
     enrichedSummary: 'Finance educator simplifying savings, tax, and small-business money decisions.',
     enrichedTags: ['personal finance', 'tax', 'msme'],
     enrichedContentStyle: 'tutorial',
@@ -103,7 +141,12 @@ const creators: SeedProfile[] = [
     platforms: ['instagram', 'youtube'],
     subscribers: 21000,
     avgViews: 14000,
+    views72h: 30000,
+    contentLanguage: 'hi',
+    contentPurity: 'pure',
+    acceptsSponsorships: true,
     engagementRate: '8.20',
+    postingFrequency: 'biweekly',
     enrichedSummary: 'Fitness creator known for home workouts and beginner-friendly routines.',
     enrichedTags: ['home workouts', 'nutrition', 'beginners'],
     enrichedContentStyle: 'tutorial',
@@ -117,7 +160,14 @@ const creators: SeedProfile[] = [
     platforms: ['instagram', 'linkedin'],
     subscribers: 18000,
     avgViews: 9000,
+    views72h: 34000,
+    contentLanguage: 'en',
+    contentPurity: 'mixed',
+    secondaryNiche: 'productivity',
+    contentMixRatio: '80/20',
+    acceptsSponsorships: true,
     engagementRate: '6.90',
+    postingFrequency: 'weekly',
     enrichedSummary: 'Tech explainer focused on AI tools, apps, and workflow automation.',
     enrichedTags: ['ai tools', 'apps', 'automation'],
     enrichedContentStyle: 'review',
@@ -131,7 +181,12 @@ const creators: SeedProfile[] = [
     platforms: ['instagram'],
     subscribers: 26000,
     avgViews: 17000,
+    views72h: 41000,
+    contentLanguage: 'hi',
+    contentPurity: 'regional',
+    acceptsSponsorships: true,
     engagementRate: '7.40',
+    postingFrequency: 'biweekly',
     enrichedSummary: 'Home cooking creator with strong vegetarian and regional recipe engagement.',
     enrichedTags: ['vegetarian', 'regional', 'home cooking'],
     enrichedContentStyle: 'storytelling',
@@ -145,7 +200,14 @@ const creators: SeedProfile[] = [
     platforms: ['instagram', 'youtube'],
     subscribers: 98000,
     avgViews: 64000,
+    views72h: 88000,
+    contentLanguage: 'en',
+    contentPurity: 'mixed',
+    secondaryNiche: 'beauty',
+    contentMixRatio: '65/35',
+    acceptsSponsorships: true,
     engagementRate: '6.30',
+    postingFrequency: 'weekly',
     enrichedSummary: 'Fashion and beauty creator with high-performing styling transitions.',
     enrichedTags: ['beauty', 'styling', 'transitions'],
     enrichedContentStyle: 'storytelling',
@@ -160,7 +222,12 @@ const creators: SeedProfile[] = [
     platforms: ['youtube'],
     subscribers: 33000,
     avgViews: 21000,
+    views72h: 36000,
+    contentLanguage: 'en',
+    contentPurity: 'pure',
+    acceptsSponsorships: true,
     engagementRate: '5.20',
+    postingFrequency: 'weekly',
     enrichedSummary: 'Finance creator focused on investing basics and young earners.',
     enrichedTags: ['investing', 'basics', 'young earners'],
     enrichedContentStyle: 'tutorial',
@@ -174,7 +241,12 @@ const creators: SeedProfile[] = [
     platforms: ['instagram'],
     subscribers: 76000,
     avgViews: 59000,
+    views72h: 78000,
+    contentLanguage: 'ta',
+    contentPurity: 'pure',
+    acceptsSponsorships: true,
     engagementRate: '7.70',
+    postingFrequency: 'weekly',
     enrichedSummary: 'Fitness creator with strong women-led wellness and strength content.',
     enrichedTags: ['strength', 'wellness', 'women'],
     enrichedContentStyle: 'tutorial',
@@ -182,6 +254,8 @@ const creators: SeedProfile[] = [
     isVerified: true,
   },
 ]
+
+const creators = creatorSeeds.map(withSponsorshipReadiness)
 
 const msmes: SeedProfile[] = [
   {
@@ -235,6 +309,36 @@ async function ensureProfile(profile: SeedProfile, passwordHash: string) {
   const [existing] = await db.select({ id: profiles.id }).from(profiles).where(eq(profiles.email, profile.email)).limit(1)
 
   if (existing) {
+    await db
+      .update(profiles)
+      .set({
+        fullName: profile.fullName,
+        niche: profile.niche,
+        platforms: profile.platforms,
+        subscribers: profile.subscribers,
+        avgViews: profile.avgViews,
+        views72h: profile.views72h,
+        contentLanguage: profile.contentLanguage,
+        contentPurity: profile.contentPurity,
+        secondaryNiche: profile.secondaryNiche,
+        contentMixRatio: profile.contentMixRatio,
+        sponsorshipReadiness: profile.sponsorshipReadiness,
+        acceptsSponsorships: profile.acceptsSponsorships,
+        engagementRate: profile.engagementRate,
+        postingFrequency: profile.postingFrequency,
+        enrichedSummary: profile.enrichedSummary,
+        enrichedTags: profile.enrichedTags,
+        enrichedContentStyle: profile.enrichedContentStyle,
+        company: profile.company,
+        industry: profile.industry,
+        website: profile.website,
+        publicSlug: profile.publicSlug,
+        isVerified: profile.isVerified ?? false,
+        status: 'active',
+        updatedAt: new Date(),
+      })
+      .where(eq(profiles.id, existing.id))
+
     return existing.id
   }
 
@@ -248,7 +352,15 @@ async function ensureProfile(profile: SeedProfile, passwordHash: string) {
       platforms: profile.platforms,
       subscribers: profile.subscribers,
       avgViews: profile.avgViews,
+      views72h: profile.views72h,
+      contentLanguage: profile.contentLanguage,
+      contentPurity: profile.contentPurity,
+      secondaryNiche: profile.secondaryNiche,
+      contentMixRatio: profile.contentMixRatio,
+      sponsorshipReadiness: profile.sponsorshipReadiness,
+      acceptsSponsorships: profile.acceptsSponsorships,
       engagementRate: profile.engagementRate,
+      postingFrequency: profile.postingFrequency,
       enrichedSummary: profile.enrichedSummary,
       enrichedTags: profile.enrichedTags,
       enrichedContentStyle: profile.enrichedContentStyle,
