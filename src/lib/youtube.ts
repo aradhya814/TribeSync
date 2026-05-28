@@ -56,6 +56,39 @@ export async function getYouTubeChannelStats(channelId: string): Promise<YouTube
   }
 }
 
+// Resolves a YouTube channel URL or @handle to stats using the API key only — no OAuth needed.
+// Supports: youtube.com/channel/UCxxx, youtube.com/@handle, youtube.com/c/name, bare channel IDs
+export async function getChannelByUrl(input: string): Promise<YouTubeChannelResult | null> {
+  if (!process.env.YOUTUBE_API_KEY) return null
+
+  const cleaned = input.trim().replace(/^https?:\/\/(www\.)?youtube\.com\//, '')
+
+  // Direct channel ID
+  if (cleaned.startsWith('channel/')) {
+    const channelId = cleaned.replace('channel/', '').split('?')[0] ?? ''
+    return getYouTubeChannelStats(channelId)
+  }
+
+  // @handle
+  const handle = cleaned.startsWith('@') ? cleaned.split('?')[0] : null
+
+  if (handle) {
+    const response = await youtube.channels.list({
+      part: ['snippet', 'statistics'],
+      forHandle: handle.replace('@', ''),
+      maxResults: 1,
+    })
+    const channel = response.data.items?.[0]
+    if (!channel?.id) return null
+    return getYouTubeChannelStats(channel.id)
+  }
+
+  // Legacy /c/name or bare keyword — fall back to search
+  const keyword = cleaned.replace(/^c\//, '').split('?')[0] ?? input
+  const results = await searchYouTubeChannels(keyword, 1)
+  return results[0] ?? null
+}
+
 export async function searchYouTubeChannels(keyword: string, limit = 10): Promise<YouTubeChannelResult[]> {
   if (!process.env.YOUTUBE_API_KEY) return []
 

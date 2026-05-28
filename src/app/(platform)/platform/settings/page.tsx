@@ -1,6 +1,6 @@
 'use client'
 
-import { Copy, Download, Save } from 'lucide-react'
+import { Copy, Download, Loader2, Save } from 'lucide-react'
 import { QRCodeCanvas } from 'qrcode.react'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
@@ -65,6 +65,9 @@ export default function SettingsPage() {
   const [bankForm, setBankForm] = useState({ accountHolderName: '', accountNumber: '', ifscCode: '', bankName: '', upiId: '', panNumber: '', gstNumber: '' })
   const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '' })
   const [youtubeStatus, setYoutubeStatus] = useState<'idle' | 'connected' | 'error'>('idle')
+  const [youtubeUrl, setYoutubeUrl] = useState('')
+  const [isVerifyingYoutube, setIsVerifyingYoutube] = useState(false)
+  const [youtubeChannel, setYoutubeChannel] = useState<{ title: string; subscribers: number; avgViews: number } | null>(null)
 
   async function loadSettings() {
     const response = await fetch('/api/settings')
@@ -109,6 +112,27 @@ export default function SettingsPage() {
       window.history.replaceState({}, '', window.location.pathname)
     }
   }, [])
+
+  async function verifyYoutubeChannel() {
+    if (!youtubeUrl.trim()) return
+    setIsVerifyingYoutube(true)
+    const response = await fetch('/api/auth/youtube/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ channelUrl: youtubeUrl.trim() }),
+    })
+    const result = (await response.json()) as { success?: boolean; channel?: { title: string; subscribers: number; avgViews: number }; error?: string }
+    setIsVerifyingYoutube(false)
+    if (!response.ok) {
+      setYoutubeStatus('error')
+      toast.error(result.error ?? 'Channel not found')
+      return
+    }
+    setYoutubeStatus('connected')
+    setYoutubeChannel(result.channel ?? null)
+    toast.success('YouTube channel connected!')
+    void loadSettings()
+  }
 
   const publicUrl = useMemo(() => {
     if (!data?.profile?.publicSlug) return ''
@@ -284,19 +308,32 @@ export default function SettingsPage() {
               <p className="text-sm font-semibold text-white">
                 Your sponsorship readiness score: {Number(data?.profile?.sponsorshipReadiness ?? 0).toFixed(2)} / 1.00
               </p>
-              <p className="caption mt-1">Connect YouTube to verify your view velocity and unlock the Verified badge.</p>
-              {youtubeStatus === 'connected' ? (
-                <p className="mt-3 text-sm font-semibold text-emerald-300">YouTube connected ✓</p>
+              <p className="caption mt-1">Paste your YouTube channel URL to verify your stats.</p>
+              {youtubeStatus === 'connected' && youtubeChannel ? (
+                <div className="mt-3 space-y-1">
+                  <p className="text-sm font-semibold text-emerald-300">YouTube connected ✓</p>
+                  <p className="caption">{youtubeChannel.title} · {youtubeChannel.subscribers.toLocaleString('en-IN')} subscribers · {youtubeChannel.avgViews.toLocaleString('en-IN')} avg views</p>
+                </div>
               ) : (
-                <Button
-                  className="mt-3 bg-[#FF0000] hover:bg-[#cc0000] text-white"
-                  onClick={() => { window.location.href = '/api/auth/youtube' }}
-                >
-                  Connect YouTube
-                </Button>
+                <div className="mt-3 flex gap-2">
+                  <Input
+                    placeholder="youtube.com/@yourchannel or channel URL"
+                    value={youtubeUrl}
+                    onChange={(e) => setYoutubeUrl(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    className="bg-tribe-primary hover:bg-tribe-primary-hover shrink-0"
+                    onClick={verifyYoutubeChannel}
+                    disabled={isVerifyingYoutube || !youtubeUrl.trim()}
+                  >
+                    {isVerifyingYoutube ? <Loader2 className="size-4 animate-spin" /> : 'Verify'}
+                  </Button>
+                </div>
               )}
               {youtubeStatus === 'error' ? (
-                <p className="caption mt-2 text-red-400">Connection failed. Make sure you have a YouTube channel on this Google account.</p>
+                <p className="caption mt-1 text-red-400">Channel not found. Try the full URL: youtube.com/channel/UCxxxxx</p>
               ) : null}
             </div>
 

@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server'
 
 import { requireAuth } from '@/lib/api/auth-check'
 
+// youtube.readonly requires Google app verification (weeks-long process).
+// Public channel stats are fetchable with just the API key — no OAuth needed.
+// This route now redirects to settings where the user enters their channel URL.
 const YOUTUBE_SCOPES = [
   'https://www.googleapis.com/auth/youtube.readonly',
 ].join(' ')
