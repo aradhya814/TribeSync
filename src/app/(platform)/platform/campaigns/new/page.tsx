@@ -2,7 +2,7 @@
 
 import { Loader2, Wand2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { type FormEvent, useState } from 'react'
+import { type FormEvent, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
@@ -67,6 +67,13 @@ export default function NewCampaignPage() {
   const [minAvgViewsValue, setMinAvgViewsValue] = useState('8000')
 
   const tierSuggestion = budgetTierSuggestion(budgetValue)
+
+  // Auto-apply tier suggestion when budget changes
+  useEffect(() => {
+    if (tierSuggestion) {
+      setMinAvgViewsValue(tierSuggestion.minAvgViews)
+    }
+  }, [tierSuggestion?.minAvgViews])
 
   async function parseBrief() {
     setIsParsing(true)
@@ -167,19 +174,9 @@ export default function NewCampaignPage() {
               onChange={(event) => setBudgetValue(event.target.value)}
             />
             {tierSuggestion ? (
-              <div className="rounded-lg border border-tribe-primary/30 bg-tribe-primary/10 p-3 text-sm text-text-mid">
-                <p>
-                  For Rs {Number(budgetValue).toLocaleString('en-IN')} budget, we suggest {tierSuggestion.label} tier creators ({tierSuggestion.range}).
-                </p>
-                <Button
-                  type="button"
-                  size="sm"
-                  className="mt-3 bg-tribe-primary hover:bg-tribe-primary-hover"
-                  onClick={() => setMinAvgViewsValue(tierSuggestion.minAvgViews)}
-                >
-                  Apply Suggestion
-                </Button>
-              </div>
+              <p className="text-xs text-text-mid">
+                Suggested: {tierSuggestion.label} tier ({tierSuggestion.range}) — min avg views set to {Number(tierSuggestion.minAvgViews).toLocaleString('en-IN')}
+              </p>
             ) : null}
           </div>
           <div className="space-y-2">

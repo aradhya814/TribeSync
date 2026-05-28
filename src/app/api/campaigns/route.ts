@@ -75,10 +75,6 @@ export async function POST(request: Request) {
 
   if (authResult.error) return authResult.error
 
-  if (authResult.session.user.role !== 'msme' && authResult.session.user.role !== 'admin') {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
-
   const body = await parseJsonBody(request)
   if (body.error) return NextResponse.json({ error: body.error }, { status: 400 })
 
