@@ -24,9 +24,6 @@ export async function POST(request: Request) {
 
   const [campaign] = await db.select().from(campaigns).where(eq(campaigns.id, parsed.data.campaignId)).limit(1)
   if (!campaign) return NextResponse.json({ error: 'Campaign not found' }, { status: 404 })
-  if (authResult.session.user.role !== 'admin' && campaign.createdBy !== authResult.session.user.id) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
 
   const [run] = await db
     .insert(agentRuns)

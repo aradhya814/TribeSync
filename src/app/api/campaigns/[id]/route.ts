@@ -35,14 +35,6 @@ export async function GET(_request: Request, { params }: RouteContext) {
     return NextResponse.json({ error: 'Campaign not found' }, { status: 404 })
   }
 
-  if (
-    authResult.session.user.role !== 'admin' &&
-    campaign.createdBy !== authResult.session.user.id &&
-    campaign.status !== 'live'
-  ) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
-
   return NextResponse.json({ campaign })
 }
 
@@ -54,10 +46,6 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
   if (!campaign) {
     return NextResponse.json({ error: 'Campaign not found' }, { status: 404 })
-  }
-
-  if (authResult.session.user.role !== 'admin' && campaign.createdBy !== authResult.session.user.id) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   const body = await parseJsonBody(request)
