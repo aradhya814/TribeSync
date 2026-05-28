@@ -74,7 +74,7 @@ export async function searchYouTubeChannels(keyword: string, limit = 10): Promis
   return channels.filter((channel): channel is YouTubeChannelResult => Boolean(channel))
 }
 
-async function calculateRecentVideoVelocity(channelId: string) {
+export async function calculateRecentVideoVelocity(channelId: string) {
   if (!process.env.YOUTUBE_API_KEY) return 0
 
   const publishedAfter = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString()

@@ -1,13 +1,15 @@
 import { google } from 'googleapis'
 
+import { sendEmail } from '@/lib/email'
+
 export const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
   process.env.GOOGLE_CLIENT_SECRET,
 )
 
-oauth2Client.setCredentials({
-  refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
-})
+if (process.env.GOOGLE_REFRESH_TOKEN) {
+  oauth2Client.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN })
+}
 
 const gmail = google.gmail({ version: 'v1', auth: oauth2Client })
 
@@ -22,15 +24,27 @@ function encodeMessage(to: string, subject: string, body: string) {
     '',
     body,
   ].join('\n')
-
   return Buffer.from(message).toString('base64url')
 }
 
-export async function sendGmail(to: string, subject: string, body: string) {
-  await gmail.users.messages.send({
-    userId: 'me',
-    requestBody: {
-      raw: encodeMessage(to, subject, body),
-    },
+// Sends via Gmail when configured, falls back to Resend silently. Never throws.
+export async function sendGmail(to: string, subject: string, body: string): Promise<'gmail' | 'resend'> {
+  if (process.env.GOOGLE_REFRESH_TOKEN) {
+    try {
+      await gmail.users.messages.send({
+        userId: 'me',
+        requestBody: { raw: encodeMessage(to, subject, body) },
+      })
+      return 'gmail'
+    } catch {
+      // Gmail failed — fall through to Resend
+    }
+  }
+
+  await sendEmail({
+    to,
+    template: 'outreach_received',
+    data: { subject, message: body },
   })
+  return 'resend'
 }

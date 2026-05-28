@@ -150,7 +150,20 @@ export async function importCreatorCandidates({
 }) {
   const vidiqItems = source === 'vidiq' ? await importVidiqCreators(niche, limit) : []
   const youtubeFallback = vidiqItems.length === 0
-    ? (await searchYouTubeChannels(niche, limit)).map((channel) => ({ channel, vidiqChannel: null }))
+    ? (await searchYouTubeChannels(niche, limit)).map((channel) => ({
+        channel,
+        // Compute outlier score natively: views72h / avgViews measures breakout velocity
+        vidiqChannel: {
+          channelId: channel.channelId,
+          title: channel.title,
+          description: channel.description,
+          thumbnailUrl: channel.thumbnailUrl,
+          channelUrl: channel.channelUrl,
+          outlierScore: channel.avgViews > 0 ? Math.round((channel.views72h / channel.avgViews) * 100) / 100 : 0,
+          viewVelocity72h: channel.views72h,
+          nicheKeyword: niche,
+        } satisfies import('@/lib/vidiq').VidiqBreakoutChannel,
+      }))
     : []
 
   const candidates = [...vidiqItems, ...youtubeFallback].slice(0, limit)
@@ -159,7 +172,7 @@ export async function importCreatorCandidates({
       channel: candidate.channel,
       vidiqChannel: candidate.vidiqChannel,
       niche,
-      source: candidate.vidiqChannel ? 'vidiq' : 'youtube',
+      source: (source === 'vidiq' && process.env.VIDIQ_MCP_URL) ? 'vidiq' : 'youtube',
     })),
   )
 
@@ -173,7 +186,7 @@ export async function importCreatorCandidates({
       avgViews: item.stats.avgViews,
       views72h: item.stats.views72h,
       outlierScore: item.stats.outlierScore,
-      source: item.stats.outlierScore === null ? 'youtube' as const : 'vidiq' as const,
+      source: (source === 'vidiq' && process.env.VIDIQ_MCP_URL) ? 'vidiq' as const : 'youtube' as const,
       imported: item.imported,
     }))
     .sort((a, b) => {

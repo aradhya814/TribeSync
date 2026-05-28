@@ -6,7 +6,6 @@ import { requireCron } from '@/lib/api/auth-check'
 import { callClaude } from '@/lib/claude'
 import { db } from '@/lib/db'
 import { outreachLogs, profiles } from '@/lib/db/schema'
-import { sendEmail } from '@/lib/email'
 import { sendGmail } from '@/lib/gmail'
 
 type FollowUpDraft = {
@@ -72,15 +71,7 @@ Rules: under 80 words, no guilt, one CTA.`,
       draft = fallback
     }
 
-    try {
-      await sendGmail(to, draft.subject, draft.message)
-    } catch {
-      await sendEmail({
-        to,
-        template: 'outreach_received',
-        data: { subject: draft.subject, message: draft.message },
-      })
-    }
+    await sendGmail(to, draft.subject, draft.message)
 
     await db.insert(outreachLogs).values({
       senderId: item.outreach.senderId,

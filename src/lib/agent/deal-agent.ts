@@ -11,7 +11,6 @@ import {
   profiles,
   type JsonRecord,
 } from '@/lib/db/schema'
-import { sendEmail } from '@/lib/email'
 import { sendGmail } from '@/lib/gmail'
 import { pusherServer } from '@/lib/pusher'
 
@@ -236,20 +235,7 @@ CTA: reply if interested.`,
 
       await this.logStep('draft_outreach', 'Drafted outreach', draft.subject, 'completed')
 
-      let emailProvider = 'Gmail'
-      try {
-        await sendGmail(topRankedCreator.email, draft.subject, draft.message)
-      } catch {
-        emailProvider = 'Resend'
-        await sendEmail({
-          to: topRankedCreator.email,
-          template: 'outreach_received',
-          data: {
-            subject: draft.subject,
-            message: draft.message,
-          },
-        })
-      }
+      const emailProvider = await sendGmail(topRankedCreator.email, draft.subject, draft.message)
 
       const followUpDueAt = new Date(Date.now() + 48 * 60 * 60 * 1000)
       await db.insert(outreachLogs).values({

@@ -4,7 +4,6 @@ import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/api/auth-check'
 import { db } from '@/lib/db'
 import { outreachLogs, outreachSignals, profiles } from '@/lib/db/schema'
-import { sendEmail } from '@/lib/email'
 import { sendGmail } from '@/lib/gmail'
 
 type RouteContext = {
@@ -32,17 +31,7 @@ export async function POST(_request: Request, { params }: RouteContext) {
     record.signal.suggestedMessage ??
     `Hi ${record.creator.fullName ?? 'there'}, I saw a useful signal for your work and wanted to discuss a collaboration.`
 
-  let provider = 'Gmail'
-  try {
-    await sendGmail(record.creator.email, subject, message)
-  } catch {
-    provider = 'Resend'
-    await sendEmail({
-      to: record.creator.email,
-      template: 'outreach_received',
-      data: { subject, message },
-    })
-  }
+  const provider = await sendGmail(record.creator.email, subject, message)
 
   await db.insert(outreachLogs).values({
     senderId: authResult.session.user.id,

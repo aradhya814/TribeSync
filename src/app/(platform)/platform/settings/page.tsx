@@ -46,17 +46,6 @@ type SettingsData = {
   } | null
 }
 
-type PhylloConnectWindow = Window & {
-  PhylloConnect?: {
-    initialize: (config: {
-      clientDisplayName: string
-      environment: string
-      userId: string
-      token: string
-      workPlatformId?: string
-    }) => { open: () => void }
-  }
-}
 
 export default function SettingsPage() {
   const [data, setData] = useState<SettingsData | null>(null)
@@ -75,8 +64,7 @@ export default function SettingsPage() {
   })
   const [bankForm, setBankForm] = useState({ accountHolderName: '', accountNumber: '', ifscCode: '', bankName: '', upiId: '', panNumber: '', gstNumber: '' })
   const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '' })
-  const [isConnectingPhyllo, setIsConnectingPhyllo] = useState(false)
-  const [phylloTokenStatus, setPhylloTokenStatus] = useState('')
+  const [youtubeStatus, setYoutubeStatus] = useState<'idle' | 'connected' | 'error'>('idle')
 
   async function loadSettings() {
     const response = await fetch('/api/settings')
@@ -109,6 +97,17 @@ export default function SettingsPage() {
 
   useEffect(() => {
     void loadSettings()
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('youtube_connected') === '1') {
+      setYoutubeStatus('connected')
+      toast.success('YouTube connected! Your stats are now verified.')
+      window.history.replaceState({}, '', window.location.pathname)
+      void loadSettings()
+    } else if (params.get('youtube_error')) {
+      setYoutubeStatus('error')
+      toast.error('YouTube connection failed. Please try again.')
+      window.history.replaceState({}, '', window.location.pathname)
+    }
   }, [])
 
   const publicUrl = useMemo(() => {
@@ -160,33 +159,6 @@ export default function SettingsPage() {
     })
   }
 
-  async function connectPhyllo() {
-    setIsConnectingPhyllo(true)
-    setPhylloTokenStatus('')
-
-    const response = await fetch('/api/phyllo/connect', { method: 'POST' })
-    const payload = (await response.json()) as { sdkToken?: string; phylloUserId?: string; error?: string }
-    setIsConnectingPhyllo(false)
-
-    if (!response.ok || !payload.sdkToken || !payload.phylloUserId) {
-      toast.error(payload.error ?? 'Could not start Phyllo connection')
-      return
-    }
-
-    const phylloConnect = (window as PhylloConnectWindow).PhylloConnect
-    if (phylloConnect) {
-      phylloConnect.initialize({
-        clientDisplayName: 'TribeSync',
-        environment: process.env.NEXT_PUBLIC_PHYLLO_ENVIRONMENT ?? 'sandbox',
-        userId: payload.phylloUserId,
-        token: payload.sdkToken,
-      }).open()
-    } else {
-      setPhylloTokenStatus('Connection token ready. Load the Phyllo Connect SDK to open the OAuth flow.')
-    }
-
-    toast.success('Phyllo connection started')
-  }
 
   return (
     <div className="space-y-6">
@@ -312,12 +284,20 @@ export default function SettingsPage() {
               <p className="text-sm font-semibold text-white">
                 Your sponsorship readiness score: {Number(data?.profile?.sponsorshipReadiness ?? 0).toFixed(2)} / 1.00
               </p>
-              <p className="caption mt-1">Improve it: Connect YouTube to verify your view velocity</p>
-              <Button className="mt-3 bg-tribe-primary hover:bg-tribe-primary-hover" onClick={connectPhyllo} disabled={isConnectingPhyllo}>
-                {isConnectingPhyllo ? <Loader2 className="size-4 animate-spin" /> : null}
-                Connect YouTube / Instagram
-              </Button>
-              {phylloTokenStatus ? <p className="caption mt-2">{phylloTokenStatus}</p> : null}
+              <p className="caption mt-1">Connect YouTube to verify your view velocity and unlock the Verified badge.</p>
+              {youtubeStatus === 'connected' ? (
+                <p className="mt-3 text-sm font-semibold text-emerald-300">YouTube connected ✓</p>
+              ) : (
+                <Button
+                  className="mt-3 bg-[#FF0000] hover:bg-[#cc0000] text-white"
+                  onClick={() => { window.location.href = '/api/auth/youtube' }}
+                >
+                  Connect YouTube
+                </Button>
+              )}
+              {youtubeStatus === 'error' ? (
+                <p className="caption mt-2 text-red-400">Connection failed. Make sure you have a YouTube channel on this Google account.</p>
+              ) : null}
             </div>
 
             <Button className="bg-tribe-primary hover:bg-tribe-primary-hover" onClick={saveProfile}>
