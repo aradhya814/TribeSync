@@ -10,13 +10,21 @@ export async function GET() {
   if (authResult.error) return authResult.error
 
   const userId = authResult.session.user.id
-  const brandCampaigns = await db.select().from(campaigns).where(eq(campaigns.createdBy, userId))
-  const deals = await db.select().from(collabDeals).where(eq(collabDeals.msmeId, userId))
-  const allEscrows = await db
+  let brandCampaigns = await db.select().from(campaigns).where(eq(campaigns.createdBy, userId))
+  let deals = await db.select().from(collabDeals).where(eq(collabDeals.msmeId, userId))
+  let allEscrows = await db
     .select({ escrow: escrows, deal: collabDeals })
     .from(escrows)
     .innerJoin(collabDeals, eq(collabDeals.id, escrows.dealId))
     .where(eq(collabDeals.msmeId, userId))
+
+  if (brandCampaigns.length === 0 && deals.length === 0) {
+    ;[brandCampaigns, deals, allEscrows] = await Promise.all([
+      db.select().from(campaigns).limit(10),
+      db.select().from(collabDeals).limit(10),
+      db.select({ escrow: escrows, deal: collabDeals }).from(escrows).innerJoin(collabDeals, eq(collabDeals.id, escrows.dealId)).limit(10),
+    ])
+  }
 
   const totalSpent = deals.reduce((sum, deal) => sum + Number(deal.agreedAmount), 0)
   const escrowActive = allEscrows

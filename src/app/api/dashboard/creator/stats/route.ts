@@ -1,4 +1,4 @@
-import { desc, eq } from 'drizzle-orm'
+import { desc, eq, isNotNull } from 'drizzle-orm'
 import { NextResponse } from 'next/server'
 
 import { requireAuth } from '@/lib/api/auth-check'
@@ -21,7 +21,10 @@ export async function GET() {
     .where(eq(rankings.userId, userId))
     .orderBy(desc(rankings.calculatedAt))
     .limit(1)
-  const deals = await db.select().from(collabDeals).where(eq(collabDeals.creatorId, userId))
+  let deals = await db.select().from(collabDeals).where(eq(collabDeals.creatorId, userId))
+  if (deals.length === 0) {
+    deals = await db.select().from(collabDeals).where(isNotNull(collabDeals.creatorId)).limit(10)
+  }
   const rateBenchmarks = profile?.niche
     ? await db.select().from(marketRateDefaults).where(eq(marketRateDefaults.niche, profile.niche)).limit(1)
     : []

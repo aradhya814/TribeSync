@@ -12,7 +12,7 @@ export async function GET() {
   const userId = authResult.session.user.id
 
   // Fetch user's agent runs, signals, and deals in parallel
-  const [runs, signals, userDeals] = await Promise.all([
+  let [runs, signals, userDeals] = await Promise.all([
     db.select().from(agentRuns).where(eq(agentRuns.userId, userId)),
     db
       .select()
@@ -26,6 +26,14 @@ export async function GET() {
       .from(collabDeals)
       .where(or(eq(collabDeals.creatorId, userId), eq(collabDeals.msmeId, userId))),
   ])
+
+  if (runs.length === 0 && signals.length === 0 && userDeals.length === 0) {
+    ;[runs, signals, userDeals] = await Promise.all([
+      db.select().from(agentRuns).orderBy(desc(agentRuns.createdAt)).limit(5),
+      db.select().from(outreachSignals).orderBy(desc(outreachSignals.createdAt)).limit(5),
+      db.select().from(collabDeals).orderBy(desc(collabDeals.createdAt)).limit(5),
+    ])
+  }
 
   // Batch all step queries into a single IN query instead of N+1
   const runIds = runs.map((run) => run.id)

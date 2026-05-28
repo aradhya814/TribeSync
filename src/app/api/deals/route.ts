@@ -1,4 +1,4 @@
-import { eq, or } from 'drizzle-orm'
+import { desc, eq, or } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
 import { NextResponse } from 'next/server'
 
@@ -15,22 +15,29 @@ export async function GET() {
 
   const userId = authResult.session.user.id
 
-  const deals = await db
-    .select({
-      id: collabDeals.id,
-      status: collabDeals.status,
-      agreedAmount: collabDeals.agreedAmount,
-      createdAt: collabDeals.createdAt,
-      campaign: { title: campaigns.title },
-      creator: { fullName: creatorProfile.fullName, email: creatorProfile.email },
-      msme: { fullName: brandProfile.fullName, email: brandProfile.email },
-    })
-    .from(collabDeals)
-    .leftJoin(campaigns, eq(collabDeals.campaignId, campaigns.id))
-    .leftJoin(creatorProfile, eq(collabDeals.creatorId, creatorProfile.id))
-    .leftJoin(brandProfile, eq(collabDeals.msmeId, brandProfile.id))
-    .where(or(eq(collabDeals.creatorId, userId), eq(collabDeals.msmeId, userId)))
-    .orderBy(collabDeals.createdAt)
+  const selectDeals = () =>
+    db
+      .select({
+        id: collabDeals.id,
+        status: collabDeals.status,
+        agreedAmount: collabDeals.agreedAmount,
+        createdAt: collabDeals.createdAt,
+        campaign: { title: campaigns.title },
+        creator: { fullName: creatorProfile.fullName, email: creatorProfile.email },
+        msme: { fullName: brandProfile.fullName, email: brandProfile.email },
+      })
+      .from(collabDeals)
+      .leftJoin(campaigns, eq(collabDeals.campaignId, campaigns.id))
+      .leftJoin(creatorProfile, eq(collabDeals.creatorId, creatorProfile.id))
+      .leftJoin(brandProfile, eq(collabDeals.msmeId, brandProfile.id))
 
-  return NextResponse.json(deals)
+  const deals = await selectDeals()
+    .where(or(eq(collabDeals.creatorId, userId), eq(collabDeals.msmeId, userId)))
+    .orderBy(desc(collabDeals.createdAt))
+
+  if (deals.length > 0) return NextResponse.json(deals)
+
+  const demoDeals = await selectDeals().orderBy(desc(collabDeals.createdAt)).limit(10)
+
+  return NextResponse.json(demoDeals)
 }

@@ -53,7 +53,11 @@ export async function GET() {
       .orderBy(desc(campaigns.budget))
 
     const appliedIds = new Set((await applications).map((item) => item.campaignId))
-    return NextResponse.json({ campaigns: rows.filter((campaign) => !appliedIds.has(campaign.id)) })
+    const availableRows = rows.filter((campaign) => !appliedIds.has(campaign.id))
+    if (availableRows.length > 0) return NextResponse.json({ campaigns: availableRows })
+
+    const demoRows = await db.select().from(campaigns).where(eq(campaigns.status, 'live')).orderBy(desc(campaigns.budget))
+    return NextResponse.json({ campaigns: demoRows.filter((campaign) => !appliedIds.has(campaign.id)) })
   }
 
   if (session.user.role === 'admin') {
@@ -66,6 +70,11 @@ export async function GET() {
     .from(campaigns)
     .where(eq(campaigns.createdBy, session.user.id))
     .orderBy(desc(campaigns.createdAt))
+
+  if (rows.length === 0) {
+    const demoRows = await db.select().from(campaigns).orderBy(desc(campaigns.createdAt)).limit(10)
+    return NextResponse.json({ campaigns: demoRows })
+  }
 
   return NextResponse.json({ campaigns: rows })
 }

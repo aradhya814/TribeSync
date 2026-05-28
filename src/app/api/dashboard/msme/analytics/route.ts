@@ -18,10 +18,10 @@ export async function GET() {
   if (authResult.error) return authResult.error
 
   const userId = authResult.session.user.id
-  const deals = await db.select().from(collabDeals).where(eq(collabDeals.msmeId, userId))
-  const brandCampaigns = await db.select().from(campaigns).where(eq(campaigns.createdBy, userId))
+  let deals = await db.select().from(collabDeals).where(eq(collabDeals.msmeId, userId))
+  let brandCampaigns = await db.select().from(campaigns).where(eq(campaigns.createdBy, userId))
   const creators = await db.select().from(profiles)
-  const traceability = await db
+  let traceability = await db
     .select({
       campaignId: traceabilityPacks.campaignId,
       utmCampaign: traceabilityPacks.utmCampaign,
@@ -31,6 +31,21 @@ export async function GET() {
     .innerJoin(campaigns, eq(campaigns.id, traceabilityPacks.campaignId))
     .where(eq(campaigns.createdBy, userId))
   const marketRates = await db.select().from(marketRateDefaults).limit(10)
+
+  if (deals.length === 0 && brandCampaigns.length === 0) {
+    ;[deals, brandCampaigns, traceability] = await Promise.all([
+      db.select().from(collabDeals).limit(10),
+      db.select().from(campaigns).limit(10),
+      db
+        .select({
+          campaignId: traceabilityPacks.campaignId,
+          utmCampaign: traceabilityPacks.utmCampaign,
+          couponCode: traceabilityPacks.couponCode,
+        })
+        .from(traceabilityPacks)
+        .limit(10),
+    ])
+  }
 
   const monthlySpend = Array.from({ length: 12 }, (_, index) => {
     const date = new Date()

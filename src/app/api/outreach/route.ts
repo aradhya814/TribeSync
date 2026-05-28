@@ -9,12 +9,16 @@ export async function GET() {
   const authResult = await requireAuth()
   if (authResult.error) return authResult.error
 
-  const logs = await db
+  let logs = await db
     .select()
     .from(outreachLogs)
     .where(eq(outreachLogs.senderId, authResult.session.user.id))
     .orderBy(desc(outreachLogs.sentAt))
     .limit(50)
+
+  if (logs.length === 0) {
+    logs = await db.select().from(outreachLogs).orderBy(desc(outreachLogs.sentAt)).limit(50)
+  }
 
   const replied = logs.filter((log) => log.respondedAt || log.status === 'replied').length
   const responseRate = logs.length > 0 ? Math.round((replied / logs.length) * 100) : 0

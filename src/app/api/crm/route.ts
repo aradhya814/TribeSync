@@ -37,6 +37,11 @@ export async function GET() {
     .where(eq(crmContacts.ownerId, authResult.session.user.id))
     .orderBy(desc(crmContacts.updatedAt))
 
+  if (contacts.length === 0) {
+    const demoContacts = await db.select().from(crmContacts).orderBy(desc(crmContacts.updatedAt)).limit(20)
+    return NextResponse.json({ contacts: demoContacts })
+  }
+
   return NextResponse.json({ contacts })
 }
 

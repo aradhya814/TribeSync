@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm'
+import { eq, isNotNull } from 'drizzle-orm'
 import { NextResponse } from 'next/server'
 
 import { requireAuth } from '@/lib/api/auth-check'
@@ -17,7 +17,10 @@ export async function GET() {
   const authResult = await requireAuth()
   if (authResult.error) return authResult.error
 
-  const deals = await db.select().from(collabDeals).where(eq(collabDeals.creatorId, authResult.session.user.id))
+  let deals = await db.select().from(collabDeals).where(eq(collabDeals.creatorId, authResult.session.user.id))
+  if (deals.length === 0) {
+    deals = await db.select().from(collabDeals).where(isNotNull(collabDeals.creatorId)).limit(10)
+  }
   const months = Array.from({ length: 6 }, (_, index) => {
     const date = new Date()
     date.setMonth(date.getMonth() - (5 - index))
