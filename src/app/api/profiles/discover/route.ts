@@ -144,6 +144,7 @@ export async function POST(request: Request) {
     })
     .sort((a, b) => b._score - a._score)
     .slice(0, 12)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     .map(({ _score, ...creator }) => creator)
 
   return NextResponse.json({ creators, niche })

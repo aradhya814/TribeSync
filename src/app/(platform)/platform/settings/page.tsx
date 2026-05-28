@@ -1,6 +1,6 @@
 'use client'
 
-import { Copy, Download, Loader2, Save } from 'lucide-react'
+import { Copy, Download, Save } from 'lucide-react'
 import { QRCodeCanvas } from 'qrcode.react'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
