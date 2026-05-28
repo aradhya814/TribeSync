@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { onInvoiceCreated } from '@/lib/agent/invoice-agent'
 import { requireAuth } from '@/lib/api/auth-check'
 import { releaseEscrowForMilestone } from '@/lib/api/escrow'
+import { parseJsonBody } from '@/lib/api/json'
 import { verifyProof } from '@/lib/api/proof'
 import { db } from '@/lib/db'
 import { collabDeals, invoices, milestones, profiles } from '@/lib/db/schema'
@@ -89,7 +90,10 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   const authResult = await requireAuth()
   if (authResult.error) return authResult.error
 
-  const parsed = patchSchema.safeParse(await request.json())
+  const body = await parseJsonBody(request)
+  if (body.error) return NextResponse.json({ error: body.error }, { status: 400 })
+
+  const parsed = patchSchema.safeParse(body.data)
   if (!parsed.success) return NextResponse.json({ error: 'Invalid milestone payload' }, { status: 400 })
 
   const context = await fetchMilestoneContext(params.id)
@@ -205,13 +209,8 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       .where(eq(collabDeals.id, deal.id))
       .returning()
 
-    const [invoicedDeal] = await db
-      .update(collabDeals)
-      .set({ status: 'invoiced' })
-      .where(eq(collabDeals.id, deal.id))
-      .returning()
-
-    const invoice = await ensureInvoice(invoicedDeal ?? completedDeal ?? deal)
+    const finalDeal = completedDeal ?? deal
+    const invoice = await ensureInvoice(finalDeal)
     invoiceId = invoice.id
 
     try {
@@ -221,20 +220,20 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     }
 
     await pusherServer.trigger(`private-deal-${deal.id}`, 'deal-completed', {
-      deal: invoicedDeal ?? completedDeal,
+      deal: finalDeal,
       invoiceId,
     })
 
     if (deal.creatorId) {
       await pusherServer.trigger(`private-user-${deal.creatorId}`, 'deal-updated', {
-        deal: invoicedDeal ?? completedDeal,
+        deal: finalDeal,
         invoiceId,
       })
     }
 
     if (deal.msmeId) {
       await pusherServer.trigger(`private-user-${deal.msmeId}`, 'deal-updated', {
-        deal: invoicedDeal ?? completedDeal,
+        deal: finalDeal,
         invoiceId,
       })
     }

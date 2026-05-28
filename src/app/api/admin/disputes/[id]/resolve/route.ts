@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 
 import { requireAdmin } from '@/lib/api/auth-check'
+import { parseJsonBody } from '@/lib/api/json'
 import { db } from '@/lib/db'
 import { collabDeals, disputes, escrows } from '@/lib/db/schema'
 import { pusherServer } from '@/lib/pusher'
@@ -32,7 +33,10 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   const authResult = await requireAdmin()
   if (authResult.error) return authResult.error
 
-  const parsed = resolveSchema.safeParse(await request.json())
+  const body = await parseJsonBody(request)
+  if (body.error) return NextResponse.json({ error: body.error }, { status: 400 })
+
+  const parsed = resolveSchema.safeParse(body.data)
   if (!parsed.success) return NextResponse.json({ error: 'Invalid resolution payload' }, { status: 400 })
 
   const [record] = await db

@@ -1,9 +1,11 @@
 import bcrypt from 'bcryptjs'
+import crypto from 'crypto'
 import { eq } from 'drizzle-orm'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 
 import { requireAuth } from '@/lib/api/auth-check'
+import { parseJsonBody } from '@/lib/api/json'
 import { calculateSponsorshipReadiness, maybeEnrichProfile } from '@/lib/api/profiles'
 import { db } from '@/lib/db'
 import { creatorBankDetails, notificationPrefs, profiles } from '@/lib/db/schema'
@@ -62,13 +64,45 @@ const settingsSchema = z.discriminatedUnion('section', [
   }),
 ])
 
-function encodeAccountNumber(accountNumber: string) {
-  return Buffer.from(accountNumber).toString('base64')
+function bankEncryptionKey() {
+  const secret = process.env.BANK_DETAILS_ENCRYPTION_KEY ?? process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET
+  if (!secret) throw new Error('BANK_DETAILS_ENCRYPTION_KEY or AUTH_SECRET is required')
+  return crypto.createHash('sha256').update(secret).digest()
+}
+
+function encryptAccountNumber(accountNumber: string) {
+  const iv = crypto.randomBytes(12)
+  const cipher = crypto.createCipheriv('aes-256-gcm', bankEncryptionKey(), iv)
+  const encrypted = Buffer.concat([cipher.update(accountNumber, 'utf8'), cipher.final()])
+  const authTag = cipher.getAuthTag()
+
+  return `v1:${iv.toString('base64')}:${authTag.toString('base64')}:${encrypted.toString('base64')}`
+}
+
+function decryptAccountNumber(value: string) {
+  if (!value.startsWith('v1:')) {
+    return Buffer.from(value, 'base64').toString('utf8')
+  }
+
+  const [, iv, authTag, encrypted] = value.split(':')
+  if (!iv || !authTag || !encrypted) return null
+
+  try {
+    const decipher = crypto.createDecipheriv('aes-256-gcm', bankEncryptionKey(), Buffer.from(iv, 'base64'))
+    decipher.setAuthTag(Buffer.from(authTag, 'base64'))
+    return Buffer.concat([
+      decipher.update(Buffer.from(encrypted, 'base64')),
+      decipher.final(),
+    ]).toString('utf8')
+  } catch {
+    return null
+  }
 }
 
 function maskAccountNumber(encoded: string | null) {
   if (!encoded) return null
-  const decoded = Buffer.from(encoded, 'base64').toString('utf8')
+  const decoded = decryptAccountNumber(encoded)
+  if (!decoded) return null
   return `••••${decoded.slice(-4)}`
 }
 
@@ -98,7 +132,10 @@ export async function PATCH(request: Request) {
   const authResult = await requireAuth()
   if (authResult.error) return authResult.error
 
-  const parsed = settingsSchema.safeParse(await request.json())
+  const body = await parseJsonBody(request)
+  if (body.error) return NextResponse.json({ error: body.error }, { status: 400 })
+
+  const parsed = settingsSchema.safeParse(body.data)
   if (!parsed.success) return NextResponse.json({ error: 'Invalid settings payload' }, { status: 400 })
 
   const userId = authResult.session.user.id
@@ -180,7 +217,7 @@ export async function PATCH(request: Request) {
   if (parsed.data.section === 'bank') {
     const [existing] = await db.select().from(creatorBankDetails).where(eq(creatorBankDetails.creatorId, userId)).limit(1)
     const accountNumberEncrypted = parsed.data.accountNumber
-      ? encodeAccountNumber(parsed.data.accountNumber)
+      ? encryptAccountNumber(parsed.data.accountNumber)
       : existing?.accountNumberEncrypted
     if (!accountNumberEncrypted) return NextResponse.json({ error: 'Account number is required' }, { status: 400 })
 

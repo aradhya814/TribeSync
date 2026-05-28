@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 
 import { requireAuth } from '@/lib/api/auth-check'
+import { parseJsonBody } from '@/lib/api/json'
 import { db } from '@/lib/db'
 import { campaignApplications, campaigns, profiles } from '@/lib/db/schema'
 
@@ -78,7 +79,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const parsed = campaignSchema.safeParse(await request.json())
+  const body = await parseJsonBody(request)
+  if (body.error) return NextResponse.json({ error: body.error }, { status: 400 })
+
+  const parsed = campaignSchema.safeParse(body.data)
 
   if (!parsed.success) {
     return NextResponse.json({ error: 'Invalid campaign payload' }, { status: 400 })

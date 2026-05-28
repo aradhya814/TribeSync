@@ -133,10 +133,11 @@ export async function GET(request: Request) {
     : withDeals
 
   const defaults = await db.select().from(marketRateDefaults)
+  const rateByNicheAndAudience = new Map(
+    defaults.map((item) => [`${item.niche ?? ''}:${item.audienceBand}`, item]),
+  )
   const enrichedCreators = pageCreators.map((creator) => {
-    const rate = defaults.find(
-      (item) => item.niche === creator.niche && item.audienceBand === audienceBand(creator.avgViews),
-    )
+    const rate = rateByNicheAndAudience.get(`${creator.niche ?? ''}:${audienceBand(creator.avgViews)}`)
 
     return {
       ...creator,

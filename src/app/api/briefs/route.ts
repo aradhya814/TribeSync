@@ -1,7 +1,8 @@
-import { and, count, eq, gte } from 'drizzle-orm'
+import { and, count, eq, gte, sql } from 'drizzle-orm'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 
+import { parseJsonBody } from '@/lib/api/json'
 import { sendEmail } from '@/lib/email'
 import { pusherServer } from '@/lib/pusher'
 import { db } from '@/lib/db'
@@ -23,15 +24,16 @@ function requestIp(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const body = await request.json()
-  const parsed = briefSchema.safeParse(body)
+  const body = await parseJsonBody(request)
+  if (body.error) return NextResponse.json({ error: body.error }, { status: 400 })
+
+  const parsed = briefSchema.safeParse(body.data)
 
   if (!parsed.success) {
     return NextResponse.json({ error: 'Invalid brief payload' }, { status: 400 })
   }
 
   const ipAddress = requestIp(request)
-  const since = new Date(Date.now() - 24 * 60 * 60 * 1000)
 
   const [rateLimit] = await db
     .select({ total: count() })
@@ -40,7 +42,7 @@ export async function POST(request: Request) {
       and(
         eq(inboundBriefs.creatorId, parsed.data.creatorId),
         eq(inboundBriefs.ipAddress, ipAddress),
-        gte(inboundBriefs.submittedAt, since),
+        gte(inboundBriefs.submittedAt, sql`now() - interval '24 hours'`),
       ),
     )
 

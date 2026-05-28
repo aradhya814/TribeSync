@@ -48,15 +48,25 @@ export default function AdminDashboardPage() {
   const [isMounted, setIsMounted] = useState(false)
   const [platform, setPlatform] = useState<PlatformStats | null>(null)
   const [funnel, setFunnel] = useState<FunnelData['funnel']>([])
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     setIsMounted(true)
     void Promise.all([
-      fetch('/api/admin/stats/platform').then((response) => response.json() as Promise<PlatformStats>),
-      fetch('/api/admin/stats/funnel').then((response) => response.json() as Promise<FunnelData>),
+      fetch('/api/admin/stats/platform').then((response) => {
+        if (!response.ok) throw new Error('Failed to load platform stats')
+        return response.json() as Promise<PlatformStats>
+      }),
+      fetch('/api/admin/stats/funnel').then((response) => {
+        if (!response.ok) throw new Error('Failed to load funnel stats')
+        return response.json() as Promise<FunnelData>
+      }),
     ]).then(([platformData, funnelData]) => {
       setPlatform(platformData)
       setFunnel(funnelData.funnel)
+      setError(null)
+    }).catch(() => {
+      setError('Unable to load admin dashboard stats right now.')
     })
   }, [])
 
@@ -67,6 +77,12 @@ export default function AdminDashboardPage() {
           <p className="caption">Admin</p>
           <h1 className="heading-1">Platform dashboard</h1>
         </div>
+
+        {error ? (
+          <section className="glass-card border-destructive/40 p-4">
+            <p className="text-sm text-destructive">{error}</p>
+          </section>
+        ) : null}
 
         <div className="grid gap-4 md:grid-cols-5">
           <MetricCard label="GMV today" value={platform ? formatInr(platform.stats.gmvToday) : undefined} icon={TrendingUp} />

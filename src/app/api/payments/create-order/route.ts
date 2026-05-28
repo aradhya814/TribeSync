@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 
 import { requireAuth } from '@/lib/api/auth-check'
+import { parseJsonBody } from '@/lib/api/json'
 import { db } from '@/lib/db'
 import { collabDeals, escrows } from '@/lib/db/schema'
 import { getRazorpay } from '@/lib/razorpay'
@@ -19,9 +20,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Only brands can fund escrow' }, { status: 403 })
   }
 
-  const parsed = orderSchema.safeParse(await request.json())
+  const body = await parseJsonBody(request)
+  if (body.error) return NextResponse.json({ error: body.error }, { status: 400 })
+
+  const parsed = orderSchema.safeParse(body.data)
   if (!parsed.success) {
     return NextResponse.json({ error: 'Invalid payment payload' }, { status: 400 })
+  }
+
+  const publicKey = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID
+  if (!publicKey) {
+    return NextResponse.json({ error: 'Razorpay public key is not configured' }, { status: 500 })
   }
 
   const [record] = await db
@@ -72,6 +81,6 @@ export async function POST(request: Request) {
   return NextResponse.json({
     order_id: order.id,
     amount: amountInPaise,
-    key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? process.env.RAZORPAY_KEY_ID ?? '',
+    key: publicKey,
   })
 }

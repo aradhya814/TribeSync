@@ -34,10 +34,12 @@ const subjects: Record<EmailTemplate, string> = {
 }
 
 function renderData(data: Record<string, unknown> = {}) {
-  const rows = Object.entries(data).map(([key, value]) => {
-    const renderedValue = typeof value === 'object' ? JSON.stringify(value) : String(value)
-    return `<p><strong>${key}</strong>: ${renderedValue}</p>`
-  })
+  const rows = Object.entries(data)
+    .filter(([, value]) => value !== undefined && value !== null)
+    .map(([key, value]) => {
+      const renderedValue = typeof value === 'object' ? JSON.stringify(value) : String(value)
+      return `<p><strong>${key}</strong>: ${renderedValue}</p>`
+    })
 
   return rows.join('') || '<p>You have a new TribeSync update.</p>'
 }

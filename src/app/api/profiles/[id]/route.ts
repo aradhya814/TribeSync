@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 
 import { requireAuth } from '@/lib/api/auth-check'
+import { parseJsonBody } from '@/lib/api/json'
 import { calculateSponsorshipReadiness, maybeEnrichProfile } from '@/lib/api/profiles'
 import { db } from '@/lib/db'
 import { profiles } from '@/lib/db/schema'
@@ -68,8 +69,10 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
   }
 
-  const body = await request.json()
-  const parsed = updateProfileSchema.safeParse(body)
+  const body = await parseJsonBody(request)
+  if (body.error) return NextResponse.json({ error: body.error }, { status: 400 })
+
+  const parsed = updateProfileSchema.safeParse(body.data)
 
   if (!parsed.success) {
     return NextResponse.json({ error: 'Invalid profile payload' }, { status: 400 })

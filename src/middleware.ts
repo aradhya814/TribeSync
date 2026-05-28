@@ -5,10 +5,17 @@ import type { AppRole } from '@/lib/db/schema'
 
 export async function middleware(request: NextRequest) {
   const { nextUrl } = request
-  const token = await getToken({
-    req: request,
-    secret: process.env.NEXTAUTH_SECRET,
-  })
+  let token: Awaited<ReturnType<typeof getToken>> = null
+
+  try {
+    token = await getToken({
+      req: request,
+      secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
+    })
+  } catch (error) {
+    console.error('Auth token validation failed', error)
+  }
+
   const userRole = token?.role as AppRole | undefined
 
   if (nextUrl.pathname.startsWith('/platform') && !token) {

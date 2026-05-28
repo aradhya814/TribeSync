@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 
 import { requireAuth } from '@/lib/api/auth-check'
+import { parseJsonBody } from '@/lib/api/json'
 import { db } from '@/lib/db'
 import { crmContacts } from '@/lib/db/schema'
 
@@ -43,7 +44,10 @@ export async function POST(request: Request) {
   const authResult = await requireAuth()
   if (authResult.error) return authResult.error
 
-  const parsed = createContactSchema.safeParse(await request.json())
+  const body = await parseJsonBody(request)
+  if (body.error) return NextResponse.json({ error: body.error }, { status: 400 })
+
+  const parsed = createContactSchema.safeParse(body.data)
   if (!parsed.success) return NextResponse.json({ error: 'Invalid CRM contact payload' }, { status: 400 })
 
   const [contact] = await db
@@ -70,7 +74,10 @@ export async function PATCH(request: Request) {
   const authResult = await requireAuth()
   if (authResult.error) return authResult.error
 
-  const parsed = updateContactSchema.safeParse(await request.json())
+  const body = await parseJsonBody(request)
+  if (body.error) return NextResponse.json({ error: body.error }, { status: 400 })
+
+  const parsed = updateContactSchema.safeParse(body.data)
   if (!parsed.success) return NextResponse.json({ error: 'Invalid CRM contact payload' }, { status: 400 })
 
   const [contact] = await db

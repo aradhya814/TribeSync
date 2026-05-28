@@ -10,7 +10,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
   }
 
-  const payload = JSON.parse(rawBody) as unknown
+  let payload: unknown
+  try {
+    payload = JSON.parse(rawBody) as unknown
+  } catch {
+    return NextResponse.json({ error: 'Malformed webhook payload' }, { status: 400 })
+  }
+
   const updated = await syncPhylloWebhook(payload)
   return NextResponse.json({ success: true, profileId: updated?.id ?? null })
 }

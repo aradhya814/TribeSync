@@ -50,7 +50,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid Razorpay signature' }, { status: 401 })
   }
 
-  const payload = JSON.parse(rawBody) as unknown
+  let payload: unknown
+  try {
+    payload = JSON.parse(rawBody) as unknown
+  } catch {
+    return NextResponse.json({ error: 'Malformed webhook payload' }, { status: 400 })
+  }
   const payment = getNestedRecord(payload, ['payload', 'payment', 'entity'])
   const order = getNestedRecord(payload, ['payload', 'order', 'entity'])
   const paymentId = readString(payment, 'id') ?? readString(order, 'id')

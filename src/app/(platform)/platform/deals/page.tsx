@@ -21,6 +21,8 @@ const statusClass: Record<string, string> = {
   initiated: 'badge-pending',
   active: 'badge-active',
   completed: 'badge-paid',
+  invoiced: 'badge-paid',
+  paid: 'badge-paid',
   disputed: 'badge-disputed',
   cancelled: 'badge-pending',
 }
@@ -28,15 +30,23 @@ const statusClass: Record<string, string> = {
 export default function DealsPage() {
   const [deals, setDeals] = useState<Deal[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     void fetch('/api/deals')
-      .then((r) => r.json() as Promise<Deal[]>)
+      .then((r) => {
+        if (!r.ok) throw new Error('Failed to load deals')
+        return r.json() as Promise<Deal[]>
+      })
       .then((data) => {
         setDeals(Array.isArray(data) ? data : [])
+        setError(null)
         setLoading(false)
       })
-      .catch(() => setLoading(false))
+      .catch(() => {
+        setError('Unable to load deals right now.')
+        setLoading(false)
+      })
   }, [])
 
   return (
@@ -50,7 +60,15 @@ export default function DealsPage() {
         <div className="text-muted-foreground text-sm">Loading deals…</div>
       )}
 
-      {!loading && deals.length === 0 && (
+      {!loading && error && (
+        <Card className="glass-card border-destructive/40">
+          <CardContent className="py-6">
+            <p className="text-sm text-destructive">{error}</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {!loading && !error && deals.length === 0 && (
         <Card className="glass-card">
           <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
             <Handshake className="text-muted-foreground h-10 w-10" />
@@ -60,14 +78,14 @@ export default function DealsPage() {
       )}
 
       <div className="space-y-3">
-        {deals.map((deal) => (
+        {!error && deals.map((deal) => (
           <Link key={deal.id} href={`/platform/deals/${deal.id}`}>
             <Card className="glass-card cursor-pointer transition-opacity hover:opacity-80">
               <CardContent className="flex items-center justify-between py-4">
                 <div className="space-y-1">
                   <p className="font-medium">{deal.campaign?.title ?? 'Untitled Campaign'}</p>
                   <p className="text-muted-foreground text-xs">
-                    {deal.creator?.fullName ?? deal.creator?.email} ↔ {deal.msme?.fullName ?? deal.msme?.email}
+                    {deal.creator?.fullName ?? deal.creator?.email ?? 'Creator'} ↔ {deal.msme?.fullName ?? deal.msme?.email ?? 'Brand'}
                   </p>
                   <p className="text-muted-foreground text-xs">
                     {new Date(deal.createdAt).toLocaleDateString('en-IN')}

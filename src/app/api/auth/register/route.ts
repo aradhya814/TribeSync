@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 
+import { parseJsonBody } from '@/lib/api/json'
 import { db } from '@/lib/db'
 import { notificationPrefs, profiles, userRoles } from '@/lib/db/schema'
 
@@ -14,8 +15,10 @@ const registerSchema = z.object({
 })
 
 export async function POST(request: Request) {
-  const body = await request.json()
-  const parsed = registerSchema.safeParse(body)
+  const body = await parseJsonBody(request)
+  if (body.error) return NextResponse.json({ error: body.error }, { status: 400 })
+
+  const parsed = registerSchema.safeParse(body.data)
 
   if (!parsed.success) {
     return NextResponse.json({ error: 'Invalid registration payload' }, { status: 400 })

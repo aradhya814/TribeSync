@@ -4,6 +4,7 @@ import { z } from 'zod'
 
 import { createDeal } from '@/lib/api/deals'
 import { requireAuth } from '@/lib/api/auth-check'
+import { parseJsonBody } from '@/lib/api/json'
 import { db } from '@/lib/db'
 import { agentRuns, agentSteps, campaigns } from '@/lib/db/schema'
 import { pusherServer } from '@/lib/pusher'
@@ -20,7 +21,10 @@ export async function POST(request: Request, { params }: RouteContext) {
   const authResult = await requireAuth()
   if (authResult.error) return authResult.error
 
-  const parsed = approveSchema.safeParse(await request.json())
+  const body = await parseJsonBody(request)
+  if (body.error) return NextResponse.json({ error: body.error }, { status: 400 })
+
+  const parsed = approveSchema.safeParse(body.data)
   if (!parsed.success) return NextResponse.json({ error: 'Invalid approval payload' }, { status: 400 })
 
   const [run] = await db.select().from(agentRuns).where(eq(agentRuns.id, params.runId)).limit(1)
